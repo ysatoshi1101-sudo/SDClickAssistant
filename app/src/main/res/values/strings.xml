@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ゴーストタッチ</string>
+    <string name="accessibility_service_description">シナリオに登録した操作を自動実行するためのサービスです。設定でONにすると、SD Click Assistantが画面の自動操作を行えるようになります。</string>
+</resources>
