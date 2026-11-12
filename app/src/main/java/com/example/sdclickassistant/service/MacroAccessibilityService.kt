@@ -262,6 +262,20 @@ class MacroAccessibilityService :
                 returnToApp()
             },
 
+            onMarkersToggled = { visible ->
+
+                if (visible) {
+
+                    showStepMarkers(
+                        scenarioId
+                    )
+
+                } else {
+
+                    stepMarkerController.hide()
+                }
+            },
+
             onRepeatSettingsChanged = { repeatCount, isInfiniteLoop ->
 
                 updateRepeatSettings(
@@ -287,17 +301,7 @@ class MacroAccessibilityService :
                     s.isInfiniteLoop
                 )
 
-                stepMarkerController.show(
-                    s.steps
-                ) { target, x, y ->
-
-                    updateStepPosition(
-                        scenarioId,
-                        target,
-                        x,
-                        y
-                    )
-                }
+                // マーカーは、ボタンで「表示」にした時に、初めて出す(最初は非表示)。
             }
         }
     }
@@ -327,6 +331,45 @@ class MacroAccessibilityService :
                     isInfiniteLoop = isInfiniteLoop
                 )
             )
+        }
+    }
+
+    /**
+     * ステップ位置のマーカーを表示する(配置待機の画面のボタンで、表示にした時)。
+     *
+     * 表示のたびに、保存済みの最新のステップを読み直す。
+     * (ドラッグで動かして保存された位置が、反映される。)
+     */
+    private fun showStepMarkers(
+        scenarioId: String
+    ) {
+
+        serviceScope.launch {
+
+            val scenario =
+                scenarioRepository
+                    .getScenarioDetail(
+                        scenarioId
+                    )
+                    ?: return@launch
+
+            // 読み込んでいる間に、ボタンで非表示に戻された、
+            // または実行が始まった場合は、表示しない。
+            if (!floatingButtonController.areMarkersVisible()) {
+                return@launch
+            }
+
+            stepMarkerController.show(
+                scenario.steps
+            ) { target, x, y ->
+
+                updateStepPosition(
+                    scenarioId,
+                    target,
+                    x,
+                    y
+                )
+            }
         }
     }
 

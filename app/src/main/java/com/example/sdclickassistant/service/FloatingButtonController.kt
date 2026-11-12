@@ -39,7 +39,14 @@ class FloatingButtonController(context: Context) {
     private var plusButtonView: TextView? = null
     private var infiniteToggleView: TextView? = null
 
+    // マーカー(ステップ位置の表示)を、表示中か。毎回、非表示から始まる。
+    private var markersVisible = false
+    private var markerToggleView: TextView? = null
+
     fun isShowing(): Boolean = containerView != null
+
+    /** マーカーの表示ボタンが、表示の状態か(配置待機の画面が出ている間のみ true になる)。 */
+    fun areMarkersVisible(): Boolean = containerView != null && markersVisible
 
     /**
      * 再生ボタン＋戻るボタン＋繰り返し回数パネルをセットで表示する。
@@ -50,16 +57,21 @@ class FloatingButtonController(context: Context) {
      * @param onBack 戻るボタンをタップした時に呼ばれる
      * @param onRepeatSettingsChanged 繰り返し回数・無限ループの設定が
      *        変更された時に呼ばれる(呼び出し側でDB保存する想定)
+     * @param onMarkersToggled マーカー(ステップ位置の表示)のボタンが押された時に、
+     *        新しい表示状態(true=表示)と共に呼ばれる(最初は非表示)
      */
     fun show(
         initialRepeatCount: Int,
         initialIsInfiniteLoop: Boolean,
         onTap: () -> Unit,
         onBack: () -> Unit,
-        onRepeatSettingsChanged: (repeatCount: Int, isInfiniteLoop: Boolean) -> Unit
+        onRepeatSettingsChanged: (repeatCount: Int, isInfiniteLoop: Boolean) -> Unit,
+        onMarkersToggled: (visible: Boolean) -> Unit
     ) {
         if (containerView != null) return
 
+        // マーカーは、毎回、非表示から始める
+        markersVisible = false
         currentRepeatCount = initialRepeatCount
         currentIsInfiniteLoop = initialIsInfiniteLoop
 
@@ -123,8 +135,34 @@ class FloatingButtonController(context: Context) {
             )
         }
 
+        // マーカー(ステップ位置の表示)の、表示/非表示を切り替えるボタン。
+        // 毎回、非表示から始まる。表示中は青、非表示はグレー。
+        val markerToggleButton = TextView(appContext).apply {
+            text = "◎"
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            textSize = 17f
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#616161"))
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                primaryButtonSizePx,
+                primaryButtonSizePx
+            ).apply {
+                marginStart = 10
+            }
+            setOnClickListener {
+                markersVisible = !markersVisible
+                refreshMarkerToggle()
+                onMarkersToggled(markersVisible)
+            }
+        }
+        markerToggleView = markerToggleButton
+
         buttonRow.addView(backButton)
         buttonRow.addView(playButton)
+        buttonRow.addView(markerToggleButton)
 
         // ------------------------------------------------------------
         // 2段目: 繰り返し回数パネル(− / 回数 / ＋ / ∞切替)
@@ -334,6 +372,17 @@ class FloatingButtonController(context: Context) {
         )
     }
 
+    /**
+     * マーカーの表示ボタンの見た目を、現在の状態に合わせる。
+     * 表示中は青、非表示はグレー(「∞」ボタンのオン/オフと同じ見せ方)。
+     */
+    private fun refreshMarkerToggle() {
+        val color = if (markersVisible) "#2979FF" else "#616161"
+        (markerToggleView?.background as? GradientDrawable)?.setColor(
+            Color.parseColor(color)
+        )
+    }
+
     fun hide() {
         containerView?.let {
             windowManager.removeView(it)
@@ -343,5 +392,6 @@ class FloatingButtonController(context: Context) {
         minusButtonView = null
         plusButtonView = null
         infiniteToggleView = null
+        markerToggleView = null
     }
 }
