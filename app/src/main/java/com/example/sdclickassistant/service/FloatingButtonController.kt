@@ -138,7 +138,7 @@ class FloatingButtonController(context: Context) {
         // マーカー(ステップ位置の表示)の、表示/非表示を切り替えるボタン。
         // 毎回、非表示から始まる。表示中は青、非表示はグレー。
         val markerToggleButton = TextView(appContext).apply {
-            text = "◎"
+            foreground = EyeIconDrawable(crossed = true)
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             textSize = 17f
@@ -378,6 +378,7 @@ class FloatingButtonController(context: Context) {
      */
     private fun refreshMarkerToggle() {
         val color = if (markersVisible) "#2979FF" else "#616161"
+        markerToggleView?.foreground = EyeIconDrawable(crossed = !markersVisible)
         (markerToggleView?.background as? GradientDrawable)?.setColor(
             Color.parseColor(color)
         )
