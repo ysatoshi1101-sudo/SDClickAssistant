@@ -25,6 +25,25 @@ class StepMarkerController(context: Context) {
 
     private val markerViews = mutableListOf<View>()
     private var lineView: View? = null
+
+    // スワイプの線の座標。key = ステップID、value = (始点x, 始点y, 終点x, 終点y)
+    private val swipeLines = mutableMapOf<String, FloatArray>()
+
+    /**
+     * スワイプの線の、始点または終点を更新して、線を描き直す。
+     * ドラッグ中に、マーカーの現在の中心座標を渡して使う。
+     */
+    private fun updateLine(target: MarkerTarget, x: Int, y: Int) {
+        val line = swipeLines[target.stepId] ?: return
+        if (target.isEndPoint) {
+            line[2] = x.toFloat()
+            line[3] = y.toFloat()
+        } else {
+            line[0] = x.toFloat()
+            line[1] = y.toFloat()
+        }
+        lineView?.invalidate()
+    }
     private val markerSizePx = 64
 
     /**
@@ -34,17 +53,21 @@ class StepMarkerController(context: Context) {
     fun show(steps: List<MacroStep>, onPositionChanged: (MarkerTarget, x: Int, y: Int) -> Unit) {
         hide()
 
-        val swipeLines = steps.mapNotNull { step ->
-            if (step.actionType != ActionType.SWIPE) return@mapNotNull null
-            val x = step.x ?: return@mapNotNull null
-            val y = step.y ?: return@mapNotNull null
-            val endX = step.endX ?: return@mapNotNull null
-            val endY = step.endY ?: return@mapNotNull null
-            listOf(x.toFloat(), y.toFloat(), endX.toFloat(), endY.toFloat())
+        // ステップIDごとの、スワイプの線の座標(始点x,始点y,終点x,終点y)。
+        // ドラッグ中に更新できるよう、表として持つ。
+        swipeLines.clear()
+        steps.forEach { step ->
+            if (step.actionType != ActionType.SWIPE) return@forEach
+            val x = step.x ?: return@forEach
+            val y = step.y ?: return@forEach
+            val endX = step.endX ?: return@forEach
+            val endY = step.endY ?: return@forEach
+            swipeLines[step.id] =
+                floatArrayOf(x.toFloat(), y.toFloat(), endX.toFloat(), endY.toFloat())
         }
 
         if (swipeLines.isNotEmpty()) {
-            addLineView(swipeLines)
+            addLineView()
         }
 
         steps.sortedBy { it.order }.forEachIndexed { index, step ->
@@ -83,7 +106,7 @@ class StepMarkerController(context: Context) {
         }
     }
 
-    private fun addLineView(lines: List<List<Float>>) {
+    private fun addLineView() {
         val view = object : View(appContext) {
             private val paint = Paint().apply {
                 color = Color.parseColor("#66FFFFFF")
@@ -100,7 +123,7 @@ class StepMarkerController(context: Context) {
                 getLocationOnScreen(origin)
                 canvas.translate(-origin[0].toFloat(), -origin[1].toFloat())
 
-                lines.forEach { line ->
+                swipeLines.values.forEach { line ->
                     canvas.drawLine(line[0], line[1], line[2], line[3], paint)
                 }
             }
@@ -181,6 +204,14 @@ class StepMarkerController(context: Context) {
                     params.x = (initialX + dx).toInt()
                     params.y = (initialY + dy).toInt()
                     windowManager.updateViewLayout(marker, params)
+
+                    // スワイプの線を、マーカーの現在の中心に追従させる
+                    // (スワイプ以外のステップは、表に無いため何も起きない)
+                    updateLine(
+                        target,
+                        params.x + markerSizePx / 2,
+                        params.y + markerSizePx / 2
+                    )
                     true
                 }
                 MotionEvent.ACTION_UP -> {
@@ -213,6 +244,7 @@ class StepMarkerController(context: Context) {
             }
         }
         markerViews.clear()
+        swipeLines.clear()
 
         lineView?.let {
             try {
