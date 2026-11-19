@@ -93,6 +93,13 @@ class StepMarkerController(context: Context) {
 
             override fun onDraw(canvas: Canvas) {
                 super.onDraw(canvas)
+
+                // この窓の原点が、画面の(0,0)とずれている分を実測して打ち消す。
+                // 線の座標は、画面全体を基準にした値のため。
+                val origin = IntArray(2)
+                getLocationOnScreen(origin)
+                canvas.translate(-origin[0].toFloat(), -origin[1].toFloat())
+
                 lines.forEach { line ->
                     canvas.drawLine(line[0], line[1], line[2], line[3], paint)
                 }
@@ -139,7 +146,8 @@ class StepMarkerController(context: Context) {
             markerSizePx,
             markerSizePx,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
