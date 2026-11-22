@@ -117,6 +117,20 @@ class ScenarioRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun updateExecutionSettings(
+        scenarioId: String,
+        repeatCount: Int,
+        isInfiniteLoop: Boolean,
+        speed: Float
+    ) {
+        scenarioDao.updateExecutionSettings(
+            scenarioId = scenarioId,
+            repeatCount = repeatCount,
+            isInfiniteLoop = isInfiniteLoop,
+            speed = speed
+        )
+    }
+
     override suspend fun reorderScenarios(scenarios: List<MacroScenario>) {
         // リストの並び順(index)をそのままorder値として保存する
         val updated = scenarios.mapIndexed { index, scenario ->

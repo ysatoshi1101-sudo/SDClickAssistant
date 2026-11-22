@@ -31,6 +31,20 @@ interface ScenarioDao {
     @Query("SELECT * FROM scenarios WHERE id = :scenarioId")
     suspend fun getScenarioWithSteps(scenarioId: String): ScenarioWithSteps?
 
+    // 実行設定(繰り返し・無限ループ・速度)だけを更新する。
+    // ステップには触れないため、画面が持つ古いステップで上書きしてしまう心配がない。
+    @Query(
+        "UPDATE scenarios SET repeatCount = :repeatCount, " +
+                "isInfiniteLoop = :isInfiniteLoop, speed = :speed " +
+                "WHERE id = :scenarioId"
+    )
+    suspend fun updateExecutionSettings(
+        scenarioId: String,
+        repeatCount: Int,
+        isInfiniteLoop: Boolean,
+        speed: Float
+    )
+
     // 新規シナリオ・コピーしたシナリオを一番最後に追加するための
     // 現在の最大order取得
     @Query("SELECT MAX(`order`) FROM scenarios")

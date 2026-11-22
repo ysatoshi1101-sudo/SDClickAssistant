@@ -46,8 +46,15 @@ class ScenarioExecutionPrepViewModel @Inject constructor(
         val current = _scenario.value ?: return
         val updated = transform(current)
         _scenario.value = updated
+        // 保存するのは実行設定の3項目だけ。ステップは、画面が持つ古いデータで
+        // 上書きしないよう、触れない(配置待機で動かしたマーカー位置を守るため)。
         viewModelScope.launch {
-            repository.saveScenario(updated)
+            repository.updateExecutionSettings(
+                scenarioId = updated.id,
+                repeatCount = updated.repeatCount,
+                isInfiniteLoop = updated.isInfiniteLoop,
+                speed = updated.speed
+            )
         }
     }
 }

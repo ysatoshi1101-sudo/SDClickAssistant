@@ -31,4 +31,12 @@ interface ScenarioRepository {
 
     // フォルダへ移動する。folderId=nullで未分類に戻す
     suspend fun moveToFolder(scenarioId: String, folderId: String?)
+
+    // 実行設定(繰り返し・無限ループ・速度)だけを保存する。ステップは変更しない
+    suspend fun updateExecutionSettings(
+        scenarioId: String,
+        repeatCount: Int,
+        isInfiniteLoop: Boolean,
+        speed: Float
+    )
 }
