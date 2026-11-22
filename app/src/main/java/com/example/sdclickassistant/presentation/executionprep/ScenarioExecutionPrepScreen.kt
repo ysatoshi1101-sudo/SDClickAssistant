@@ -44,6 +44,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.sdclickassistant.domain.model.ActionType
 import com.example.sdclickassistant.domain.model.MacroStep
@@ -60,6 +62,13 @@ fun ScenarioExecutionPrepScreen(
     viewModel: ScenarioExecutionPrepViewModel = hiltViewModel()
 ) {
     val scenario by viewModel.scenario.collectAsStateWithLifecycle()
+
+    // 配置待機の画面などで変更された実行設定を反映するため、
+    // 画面が前面に戻るたびに、DBから最新を読み直す。
+    // (古い値を持ったまま、別の設定を保存して、上書きしてしまうのも防ぐ)
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.reload()
+    }
     val context = LocalContext.current
 
     var hasOverlayPermission by remember {

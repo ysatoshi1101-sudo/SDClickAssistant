@@ -24,6 +24,14 @@ class ScenarioExecutionPrepViewModel @Inject constructor(
     val scenario: StateFlow<MacroScenario?> = _scenario.asStateFlow()
 
     init {
+        reload()
+    }
+
+    /**
+     * DBから最新のシナリオを読み直す。
+     * 配置待機の画面などで、実行設定が変更されて戻ってきた時に使う。
+     */
+    fun reload() {
         viewModelScope.launch {
             _scenario.value = repository.getScenarioDetail(scenarioId)
         }
