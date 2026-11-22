@@ -600,11 +600,6 @@ private fun ScenarioCard(
                     .padding(start = 8.dp)
             ) {
                 Text(text = scenario.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${scenario.steps.size} ステップ",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
 
             // お気に入り切り替え（★/☆はアイコンライブラリに依存しないテキスト表示）
