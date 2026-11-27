@@ -1148,7 +1148,19 @@ class MacroAccessibilityService :
                                     ConditionType.COLOR -> {
 
                                         val conditionMet =
-                                            evaluateColorCondition(step)
+                                            evaluateColorCondition(step) ?: run {
+
+                                                Log.e(
+                                                    TAG,
+                                                    "COLOR CONDITION FAILED: step=${stepIndex + 1}"
+                                                )
+
+                                                stopExecution(
+                                                    scenarioId
+                                                )
+
+                                                return@launch
+                                            }
 
                                         val shouldJump =
                                             if (step.invertCondition) {
@@ -1471,17 +1483,18 @@ class MacroAccessibilityService :
      * 一致するかを判定する。
      *
      * 座標が範囲外、画面キャプチャ失敗、
-     * 設定値が不足している場合はfalseを返す。
+     * 設定値が不足している場合は、判定できなかったとしてnullを返す。
+     * 判定できた場合は、成立ならtrue、不成立ならfalseを返す。
      */
     private suspend fun evaluateColorCondition(
         step: MacroStep
-    ): Boolean {
+    ): Boolean? {
 
-        val x = step.x ?: return false
-        val y = step.y ?: return false
-        val targetR = step.colorR ?: return false
-        val targetG = step.colorG ?: return false
-        val targetB = step.colorB ?: return false
+        val x = step.x ?: return null
+        val y = step.y ?: return null
+        val targetR = step.colorR ?: return null
+        val targetG = step.colorG ?: return null
+        val targetB = step.colorB ?: return null
         val tolerance = step.colorTolerance ?: DEFAULT_COLOR_TOLERANCE
 
         val screenshotService =
@@ -1491,7 +1504,7 @@ class MacroAccessibilityService :
                         TAG,
                         "COLOR CONDITION: screenshot service is null"
                     )
-                    return false
+                    return null
                 }
 
         val bitmap =
@@ -1501,7 +1514,7 @@ class MacroAccessibilityService :
                         TAG,
                         "COLOR CONDITION: failed to capture screen"
                     )
-                    return false
+                    return null
                 }
 
         return try {
@@ -1516,7 +1529,7 @@ class MacroAccessibilityService :
                     "COLOR CONDITION: coordinates out of bounds x=$x y=$y"
                 )
 
-                return false
+                return null
             }
 
             val pixel = bitmap.getPixel(x, y)
