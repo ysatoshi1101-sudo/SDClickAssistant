@@ -251,10 +251,40 @@ fun ScenarioDetailScreen(
     }
 
     stepToDelete?.let { step ->
+        // ラベルを削除する時、そのラベルを指すジャンプ・条件分岐の数を数える。
+        // 同じ名前のラベルが他に残る場合は、実行時に止まらないため、数えない。
+        val referencingCount = if (step.actionType == ActionType.LABEL) {
+            val allSteps = scenario?.steps.orEmpty()
+            val sameNameLabelRemains = allSteps.any {
+                it.id != step.id &&
+                        it.actionType == ActionType.LABEL &&
+                        it.targetLabel == step.targetLabel
+            }
+            if (sameNameLabelRemains) {
+                0
+            } else {
+                allSteps.count {
+                    (it.actionType == ActionType.JUMP || it.actionType == ActionType.CONDITION) &&
+                            it.targetLabel == step.targetLabel
+                }
+            }
+        } else {
+            0
+        }
+
         AlertDialog(
             onDismissRequest = { stepToDelete = null },
             title = { Text("ステップを削除") },
-            text = { Text("「${actionTypeLabel(step.actionType)}」のステップを削除します。この操作は取り消せません。") },
+            text = {
+                val message = "「${actionTypeLabel(step.actionType)}」のステップを削除します。この操作は取り消せません。"
+                Text(
+                    if (referencingCount > 0) {
+                        message + "\n\nこのラベルは、${referencingCount}個のステップ（ジャンプ・条件分岐）から参照されています。削除すると、実行時にそのステップで停止します。"
+                    } else {
+                        message
+                    }
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteStep(step)
@@ -724,7 +754,7 @@ private fun StepInputDialog(
 
                         when (conditionType) {
                             ConditionType.LOOP_COUNT -> {
-                                NumberField("繰り返し回数（空欄で無限ループ）", loopCountText) { loopCountText = it }
+                                NumberField("ジャンプする回数（空欄で無限にジャンプ）", loopCountText) { loopCountText = it }
                             }
                             ConditionType.COLOR -> {
                                 Button(
@@ -1253,7 +1283,7 @@ private fun StepDetailText(step: MacroStep) {
         ActionType.JUMP -> "ジャンプ先: ${step.targetLabel}"
         ActionType.CONDITION -> when (ConditionType.fromName(step.conditionType)) {
             ConditionType.LOOP_COUNT ->
-                "「${step.targetLabel}」へ ${step.loopCount?.let { "${it}回" } ?: "無限に"} 繰り返す"
+                "「${step.targetLabel}」へ ${step.loopCount?.let { "${it}回" } ?: "無限に"} ジャンプする"
 
             ConditionType.COLOR -> {
                 val colorText = "(${step.colorR},${step.colorG},${step.colorB})"
