@@ -8,5 +8,7 @@ enum class ActionType {
     SCREENSHOT,
     CONDITION,
     LABEL,
-    JUMP
+    JUMP,
+    BACK,
+    HOME
 }

@@ -1940,6 +1940,44 @@ class MacroAccessibilityService :
     // Gesture
     // ------------------------------------------------------------
 
+    /**
+     * 端末のナビゲーションボタンの「戻る」と同じ操作を行う。
+     * 受け付けられればtrue。
+     */
+    fun performBack(): Boolean {
+
+        val success =
+            performGlobalAction(
+                GLOBAL_ACTION_BACK
+            )
+
+        Log.d(
+            TAG,
+            "performBack success=$success"
+        )
+
+        return success
+    }
+
+    /**
+     * 端末のナビゲーションボタンの「ホーム」と同じ操作を行う。
+     * 受け付けられればtrue。
+     */
+    fun performHome(): Boolean {
+
+        val success =
+            performGlobalAction(
+                GLOBAL_ACTION_HOME
+            )
+
+        Log.d(
+            TAG,
+            "performHome success=$success"
+        )
+
+        return success
+    }
+
     suspend fun performTap(
         x: Int,
         y: Int

@@ -308,6 +308,8 @@ private val supportedActionTypes = listOf(
     ActionType.SWIPE,
     ActionType.WAIT,
     ActionType.SCREENSHOT,
+    ActionType.BACK,
+    ActionType.HOME,
     ActionType.LABEL,
     ActionType.JUMP,
     ActionType.CONDITION
@@ -322,6 +324,8 @@ private fun actionTypeLabel(type: ActionType): String = when (type) {
     ActionType.CONDITION -> "条件分岐"
     ActionType.LABEL -> "ラベル"
     ActionType.JUMP -> "ジャンプ"
+    ActionType.BACK -> "戻る"
+    ActionType.HOME -> "ホーム"
 }
 
 /** 一致度のしきい値を、画面表示用の文字列(小数点以下2桁)にする。 */
@@ -618,6 +622,8 @@ private fun StepInputDialog(
         ActionType.SWIPE -> x.toIntOrNull() != null && y.toIntOrNull() != null &&
                 endX.toIntOrNull() != null && endY.toIntOrNull() != null && duration.toLongOrNull() != null
         ActionType.WAIT -> waitTime.toLongOrNull() != null
+        ActionType.BACK, ActionType.HOME ->
+            waitTime.isBlank() || waitTime.toLongOrNull()?.let { it >= 0 } == true
         ActionType.SCREENSHOT -> true
         ActionType.LABEL -> labelName.isNotBlank()
         ActionType.JUMP -> selectedLabel != null
@@ -718,6 +724,9 @@ private fun StepInputDialog(
                     }
                     ActionType.WAIT -> {
                         NumberField("待機時間(ms)", waitTime) { waitTime = it }
+                    }
+                    ActionType.BACK, ActionType.HOME -> {
+                        NumberField("待機時間(ms)（空欄で待たない）", waitTime) { waitTime = it }
                     }
                     ActionType.SCREENSHOT -> {
                         Text("このステップは追加設定が不要です。")
@@ -1278,6 +1287,7 @@ private fun StepDetailText(step: MacroStep) {
         ActionType.LONG_PRESS -> "X:${step.x} Y:${step.y} 押下:${step.duration}ms 待機:${step.waitTime}ms"
         ActionType.SWIPE -> "(${step.x},${step.y}) → (${step.endX},${step.endY}) ${step.duration}ms"
         ActionType.WAIT -> "${step.waitTime}ms"
+        ActionType.BACK, ActionType.HOME -> step.waitTime?.let { "待機:${it}ms" } ?: ""
         ActionType.SCREENSHOT -> ""
         ActionType.LABEL -> "ラベル名: ${step.targetLabel}"
         ActionType.JUMP -> "ジャンプ先: ${step.targetLabel}"

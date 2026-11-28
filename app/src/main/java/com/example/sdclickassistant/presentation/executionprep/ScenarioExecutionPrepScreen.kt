@@ -534,5 +534,11 @@ private fun actionTypeLabel(
 
         ActionType.JUMP ->
             "ジャンプ"
+
+        ActionType.BACK ->
+            "戻る"
+
+        ActionType.HOME ->
+            "ホーム"
     }
 }

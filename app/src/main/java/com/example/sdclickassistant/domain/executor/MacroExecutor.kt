@@ -44,6 +44,10 @@ class MacroExecutor {
                 service.performSwipe(x, y, endX, endY, duration)
             }
 
+            ActionType.BACK -> service.performBack()
+
+            ActionType.HOME -> service.performHome()
+
             ActionType.WAIT -> true // 待機自体はジェスチャーではないため常に成功扱い
 
             else -> return StepResult.Failed(step) // SCREENSHOT等は次フェーズで対応
