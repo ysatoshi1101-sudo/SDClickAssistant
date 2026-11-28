@@ -96,21 +96,51 @@ class SequenceRecordingController(context: Context) {
         val statusText = TextView(appContext).apply {
             setTextColor(Color.WHITE)
             setBackgroundColor(Color.parseColor("#CC000000"))
-            setPadding(24, 12, 24, 12)
-            textSize = 13f
+            setPadding(20, 14, 20, 14)
+            textSize = 12f
         }
 
         val toggleButton = Button(appContext)
 
         val finishButton = Button(appContext).apply {
-            text = "記録終了"
+            text = ""
+            contentDescription = "記録終了"
+            minWidth = 0
+            minimumWidth = 0
+            minHeight = 0
+            minimumHeight = 0
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 20f
+                setColor(Color.parseColor("#757575"))
+            }
+            setPadding(14, 14, 14, 14)
+            setCompoundDrawablesWithIntrinsicBounds(
+                RecordingIconDrawable(RecordingIconDrawable.Kind.STOP),
+                null,
+                null,
+                null
+            )
         }
 
         val panel = LinearLayout(appContext).apply {
             orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             addView(statusText)
-            addView(toggleButton)
-            addView(finishButton)
+            addView(
+                toggleButton,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginStart = 8 }
+            )
+            addView(
+                finishButton,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginStart = 8 }
+            )
         }
 
         // ------------------------------------------------------------
@@ -140,12 +170,8 @@ class SequenceRecordingController(context: Context) {
                 }
             )
 
-            statusText.text = when {
-                isReplaying -> "記録: ${recorded.size}件（反映中…）"
-                state == RecordingState.IDLE -> "待機中（開始で記録）"
-                state == RecordingState.RECORDING -> "記録中: ${recorded.size}件"
-                else -> "一時停止中: ${recorded.size}件"
-            }
+            // 文字は最小限。≡はドラッグの目印、数字は記録した件数。
+            statusText.text = "≡${recorded.size}"
 
             styleToggleButton(toggleButton, state)
         }
@@ -294,6 +320,40 @@ class SequenceRecordingController(context: Context) {
             gravity = Gravity.TOP or Gravity.START
         }
 
+        // 操作パネルは、どの状態(待機中・記録中・一時停止中)でも、
+        // ボタン以外の部分(「≡件数」や余白)をドラッグして動かせる。
+        var panelInitialX = 0
+        var panelInitialY = 0
+        var panelTouchX = 0f
+        var panelTouchY = 0f
+
+        panel.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    panelInitialX = panelLayoutParams.x
+                    panelInitialY = panelLayoutParams.y
+                    panelTouchX = event.rawX
+                    panelTouchY = event.rawY
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    panelLayoutParams.x =
+                        (panelInitialX + (event.rawX - panelTouchX)).toInt()
+                    panelLayoutParams.y =
+                        (panelInitialY + (event.rawY - panelTouchY)).toInt()
+                    try {
+                        windowManager.updateViewLayout(panel, panelLayoutParams)
+                    } catch (e: Exception) {
+                        // 既に消えている場合は無視
+                    }
+                    true
+                }
+
+                else -> false
+            }
+        }
+
         windowManager.addView(root, rootLayoutParams)
         rootView = root
         rootParams = rootLayoutParams
@@ -319,7 +379,8 @@ class SequenceRecordingController(context: Context) {
     private fun styleToggleButton(button: Button, state: RecordingState) {
         val isRecording = state == RecordingState.RECORDING
 
-        button.text = when (state) {
+        button.text = ""
+        button.contentDescription = when (state) {
             RecordingState.IDLE -> "開始"
             RecordingState.RECORDING -> "一時停止"
             RecordingState.PAUSED -> "再開"
@@ -331,9 +392,13 @@ class SequenceRecordingController(context: Context) {
             cornerRadius = 20f
             setColor(Color.parseColor(if (isRecording) COLOR_PAUSE else COLOR_START))
         }
-        button.setPadding(24, 12, 24, 12)
+        button.minWidth = 0
+        button.minimumWidth = 0
+        button.minHeight = 0
+        button.minimumHeight = 0
+        button.setPadding(14, 14, 14, 14)
 
-        button.compoundDrawablePadding = 10
+        button.compoundDrawablePadding = 0
         button.setCompoundDrawablesWithIntrinsicBounds(
             RecordingIconDrawable(
                 if (isRecording) RecordingIconDrawable.Kind.PAUSE
@@ -415,7 +480,7 @@ class SequenceRecordingController(context: Context) {
  */
 private class RecordingIconDrawable(private val kind: Kind) : Drawable() {
 
-    enum class Kind { PLAY, PAUSE }
+    enum class Kind { PLAY, PAUSE, STOP }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -439,6 +504,15 @@ private class RecordingIconDrawable(private val kind: Kind) : Drawable() {
                 path.lineTo(left + w * 0.9f, top + h * 0.5f)
                 path.close()
                 canvas.drawPath(path, paint)
+            }
+
+            Kind.STOP -> {
+                // 四角
+                canvas.drawRect(
+                    left + w * 0.2f, top + h * 0.2f,
+                    left + w * 0.8f, top + h * 0.8f,
+                    paint
+                )
             }
 
             Kind.PAUSE -> {
